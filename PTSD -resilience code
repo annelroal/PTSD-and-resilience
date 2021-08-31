@@ -1,0 +1,219 @@
+***DESENLACES
+
+			    *******************************
+		    	**		     HFIAS		     **
+			    *******************************
+
+*Puntaje HFIAS - El Niño Costero 2017
+fre HFIAS_niño_sum
+
+*Puntaje HFIAS- Actual
+fre HFIAS_act_sum
+
+foreach i in HFIAS_niño_sum HFIAS_act_sum {
+sum `i', detail
+histogram `i', kdensity
+}
+
+fre $HFIAS_niño_sino $HFIAS_niño $HFIAS_act_sino $HFIAS_act 
+
+*Categorización HFIAS (faltan preguntas)
+fre hfias_act hfias_niño 
+
+				***************************
+				** Resiliencia (CD-RISC) **
+				***************************
+				
+**Cada item
+fre r*
+
+**Sumatoria global
+sum sum_resiliencia, detail
+histogram sum_resiliencia, kdensity
+
+**Categorización CD-RISC
+fre res_altobajo 
+
+			   	   ***************************
+				   **  PTSD (PCL CIVILIAN)  **
+				   ***************************
+
+**Cada item
+fre p_intrusiv suenos_rec flashbacks react_emo reac_fisic eva_pens eva_exp evocacion_exp perd_interes desapego restricc_afecto futuro_corto sueno irritabilidad concentracion hipervigilancia asombro
+
+**Sumatoria global
+sum PCL_sum, detail
+histogram PCL_sum, kdensity
+**Categorización y entrevistas a profundidad
+fre summ_ptsd
+fre elegible_entrevprofundidad
+
+foreach i in  criterioB_sum criterioC_sum criterioD_sum {
+   sum `i', detail
+   histogram `i', kdensity name(`i')
+}
+
+*reliability / internal consistency (Cronbach's Alpha)
+alpha $criterioB_PCL $criterioC_PCL $criterioD_PCL , detail std item label
+
+foreach i in criterioB_PCL criterioC_PCL criterioD_PCL {
+	alpha $`i', detail std item label
+}
+
+			   	   *****************************
+				   ** Capital social (SASCAT) **
+				   *****************************
+
+fre s_placename
+*Dominio: Membresia de grupo
+fre s_groupid_*
+
+*Dominio: Apoyo de algun grupo
+fre s_support_*
+
+*Dominio: Apoyo de algun individuo
+fre s_2_g*
+
+*Dominio: Actividades en pro de la comunidad
+fre s_3 s_4
+
+*Categorización Capital social estructurado
+fre capsoc_e
+
+*Categorización Capital social cognitivo
+fre s_5 s_6 s_7 s_8
+fre capsoc_c
+
+**Capital social cognitivo
+sum capsoc_c , detail
+
+
+          **************************************************
+		  ** Consumo de sustancias - Depresión y ansiedad **
+	      **************************************************
+************************CONSUMO DE SUSTANCIAS*******************
+
+fre tab_sino alc_sino
+
+fre tab_cat alc_cat
+
+fre TAB_sum
+sum TAB_sum , detail
+histogram TAB_sum, kdensity 
+
+fre ALC_sum
+sum ALC_sum , detail 
+histogram ALC_sum, kdensity
+
+************************DEPRESIÓN******************************
+
+fre desinteres tristeza insomnio cansancio apetito fracaso concentracion inquietud daño
+
+sum DEP_sum, detail
+histogram DEP_sum, kdensity
+
+fre summ_dep dep_cat control_tto
+
+
+************************ANSIEDAD********************************
+fre t10_1 t10_2 t10_3 t10_4 t10_5 t10_6 t10_7
+
+fre grupos_focales
+
+sum ANS_sum, detail
+histogram ANS_sum, kdensity
+
+fre ans_cat
+
+*****************Bivariate Descriptive Analysis*************************
+
+*>PCL y CD-RISC
+
+tab res_cat summ_ptsd, row chi2
+
+*Normalidad
+bys summ_ptsd : tabstat sum_resiliencia, s(mean p50 sk kur)
+
+*>PCL y CD-RISC cuantitativo 
+
+kwallis qtile_sum, by(summ_ptsd)
+dunntest qtile_sum, by(summ_ptsd) ma(bonferroni)
+bootstrap r(chi2_adj), reps(10000) seed(666) bca nodots: kwallis qtile_sum, by(summ_ptsd) 
+estat bootstrap, all
+
+kwallis sum_resiliencia, by(summ_ptsd)
+dunntest sum_resiliencia, by(summ_ptsd) ma(bonferroni)
+bootstrap r(chi2_adj), reps(10000) seed(666) bca nodots: kwallis sum_resiliencia, by(summ_ptsd) 
+estat bootstrap, all
+
+*>PCL y Apoyo social
+
+foreach i in capsoc_e capsoc_c {
+	tab `i' summ_ptsd , row chi2
+}
+
+*>PCL y Factores estresantes
+
+foreach i in  enf_mentales les_fisicas fam_fallecio_inundacion {
+	tab `i' summ_ptsd , row chi2
+}
+
+*>PCL y Depresión
+foreach i in summ_dep dep_cat control_tto {
+tab `i' summ_ptsd , row chi2
+}
+
+kwallis DEP_sum, by(summ_ptsd)
+dunntest DEP_sum, by(summ_ptsd) ma(bonferroni)
+bootstrap r(chi2_adj), reps(10000) seed(666) bca nodots: kwallis DEP_sum, by(summ_ptsd) 
+estat bootstrap, all
+
+*>PCL y Ansiedad
+tab ans_cat summ_ptsd , row chi2
+
+kwallis ANS_sum, by(summ_ptsd)
+dunntest ANS_sum, by(summ_ptsd) ma(bonferroni)
+bootstrap r(chi2_adj), reps(10000) seed(666) bca nodots: kwallis ANS_sum, by(summ_ptsd) 
+estat bootstrap, all
+
+*>PCL y Consumo de sustancias
+foreach i in alc_cat tab_cat {
+tab `i' summ_ptsd , row chi2
+}
+
+kwallis TAB_sum, by(summ_ptsd)
+dunntest TAB_sum, by(summ_ptsd) ma(bonferroni)
+bootstrap r(chi2_adj), reps(10000) seed(666) bca nodots: kwallis TAB_sum, by(summ_ptsd) 
+estat bootstrap, all
+
+kwallis ALC_sum, by(summ_ptsd)
+dunntest ALC_sum, by(summ_ptsd) ma(bonferroni)
+bootstrap r(chi2_adj), reps(10000) seed(666) bca nodots: kwallis ALC_sum, by(summ_ptsd) 
+estat bootstrap, all 
+
+*>PCL y HFIAS
+foreach i in hfias_act hfias_niño {
+tab `i' summ_ptsd , row chi2
+}
+
+kwallis HFIAS_niño_sum, by(summ_ptsd)
+dunntest HFIAS_niño_sum, by(summ_ptsd) ma(bonferroni)
+bootstrap r(chi2_adj), reps(10000) seed(666) bca nodots: kwallis HFIAS_niño_sum, by(summ_ptsd) 
+estat bootstrap, all
+
+kwallis HFIAS_act_sum, by(summ_ptsd)
+dunntest HFIAS_act_sum, by(summ_ptsd) ma(bonferroni)
+bootstrap r(chi2_adj), reps(10000) seed(666) bca nodots: kwallis HFIAS_act_sum, by(summ_ptsd) 
+estat bootstrap, all
+
+*>PCL y demográficas
+foreach i in sexo sexo civil instruccion laboral religion ingresos  ///
+				celular_hogar refrigeradora licuadora tv tenencia_casa pared techo piso fuente_agua excretas   ///
+				acceso_agua acceso_desague animal refri_perd cocina {
+tab `i' summ_ptsd , row chi2
+}
+
+*>PCL y Pérdidas financieras, Daño vivienda y desplazamiento
+foreach i in perdida_trabajo dano_vivienda  desplazamiento_inundacion vive_actual {
+tab `i' summ_ptsd , row chi2
+}
