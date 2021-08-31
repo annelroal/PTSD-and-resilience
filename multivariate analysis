@@ -1,0 +1,55 @@
+xtset depart 
+
+#delimit;
+global var_num =" PCL_sum HFIAS_niño_sum HFIAS_act_sum 
+sum_resiliencia qtile_sum qtile_capsoc_e DEP_sum ANS_sum TAB_sum ALC_sum
+n_banos n_familia edad tiempo_antec_mental tiempo_vivienda_actual  
+";
+#delimit cr;
+
+#delimit;
+global var_cat =" res_altobajo res_cat  
+				hfias_act enf_mentales les_fisicas fam_fallecio_inundacion 
+				quien_famfallecio dano_vivienda perdida_trabajo desplazamiento_inundacion vive_actual
+				capsoc_e capsoc_c 
+				tab_cat alc_cat ans_cat summ_dep control_tto 
+";
+#delimit cr;
+
+
+xtsum $var_num
+foreach i in $var_cat {
+xttab `i'
+}
+**Desenlace binario: xtpoisson
+foreach i in res_altobajo sum_resiliencia qtile_sum ib0.res_cat ///
+				provincia distrito aahh sexo edad civil instruccion laboral religion ingresos n_familia trabajo_hogar  ///
+				celular_hogar refrigeradora licuadora tv tenencia_casa pared techo piso fuente_agua excretas n_banos  ///
+				acceso_agua acceso_desague animal HFIAS_niño_sum HFIAS_act_sum hfias_niño ib1.hfias_act  /// 
+				ib0.enf_mentales ib0.les_fisicas ib0.fam_fallecio_inundacion cual_antec_mental tiempo_antec_mental tipo_fam_mental ///
+				atencion_lesionfisica fam_lesionfisica quien_fam_lesionfisica quien_famfallecio ///
+				ib0.dano_vivienda ib0.perdida_trabajo telf_fijo refri_perd microondas lavadora compu cocina moto automovil ///
+				triciclo ninguna_perd ib0.desplazamiento_inundacion ib0.vive_actual tiempo_vivienda_actual ///
+				ib0.capsoc_e ib0.capsoc_c TAB_sum ib1.tab_cat ib1.alc_cat ib1.dep_cat ib0.control_tto ib1.ans_cat ALC_sum ANS_sum  DEP_sum summ_dep {
+				
+				meglm summ_ptsd `i', eform vce(robust) nolog fam(poisson) link(log)
+}
+**Modelo multivariable con dep_cat y res_cat
+
+glm summ_ptsd ib0.enf_mentales ib0.les_fisicas ib0.fam_fallecio_inundacion ///
+				ib0.dano_vivienda ib0.perdida_trabajo ib0.desplazamiento_inundacion ib0.vive_actual   ///
+				ib1.hfias_act ib0.capsoc_e ib0.capsoc_c ib0.res_cat  ///
+				ib1.tab_cat ib1.alc_cat ib1.dep_cat ib0.control_tto ib1.ans_cat  , eform vce(robust) nolog fam(binomial) link(logit)
+
+** Mediación de efecto para multinomiales
+	
+foreach i in    enf_mentales les_fisicas  ///
+				dano_vivienda perdida_trabajo desplazamiento_inundacion vive_actual   ///
+				hfias_act res_cat  ///
+				capsoc_e capsoc_c ///
+				tab_cat alc_cat ans_cat dep_cat control_tto	{	
+				
+ldecomp summ_ptsd , direct(res_altobajo) indirect(`i') or obspr predpr predodds
+}
+
+* bysort res_altobajo: xttab summ_ptsd
